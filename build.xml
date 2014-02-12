@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <!DOCTYPE project>
+
+<!-- DEPRECATION WARNING. THIS ANT BUILD IS LIVING ALONGSIDE THE MAVEN BUILD AT THE MOMENT.
+THE MAVEN BUILD IS THE CANONICAL ONE AND THE ANT BUILD WILL BE PHASED OUT. -->
+
 <!-- 
   To make external JARs (e.g. Lucene, junit) available to this build, 
   you can do any of the following:
@@ -20,7 +24,7 @@
 			 make the release, and then increment again to next_odd_number and check
 			 in. This way when people check out from svn, they always get the
 			 most recent development version. -->
-  <property name="version" value="3.9"/>
+  <property name="version" value="5.5"/>
   <property file="build.properties" />
 
   <property environment="env"/>
@@ -35,14 +39,14 @@
   </condition>
 
   <property name="basedir" value="."/>
-  <property name="builddir" value="${basedir}/build"/>
+  <property name="builddir" value="${basedir}/target"/>
   <property name="buildclassesdir" value="${builddir}/classes"/>
   <property name="distdir" value="${basedir}/dist"/>
   <property name="distname" value="semanticvectors-${version}"/>
-  <property name="docdir" value="${basedir}/doc"/>  
-  <property name="srcdir" value="${basedir}/src"/>
-  <property name="testdir" value="${basedir}/test"/>
-  <property name="testworkingdir" value="${testdir}/testdata/tmp"/>
+  <property name="docdir" value="${basedir}/target/site/apidocs/"/>  
+  <property name="srcdir" value="${basedir}/src/main/java"/>
+  <property name="testdir" value="${basedir}/src/test/java"/>
+  <property name="testtmpdir" value="${basedir}/tmp"/>
   <property name="extdir" value="${basedir}/src-ext"/>
   <property name="dist-doc.dir" value="./../javadoc/latest-stable-test"/>
 
@@ -65,16 +69,7 @@
     <mkdir dir="${distdir}"/>
   </target>
 
-  <target name="compile-deps" depends="init">
-    <javac srcdir="./thirdparty"
-           destdir="${buildclassesdir}"
-           debug="on"
-           classpathref="compile.classpath"
-           includeantruntime="false"
-           />
-  </target>
-
-  <target name="compile" depends="init,compile-deps">
+  <target name="compile" depends="init">
     <javac srcdir="${srcdir}"
            classpathref="compile.classpath"
            destdir="${buildclassesdir}"
@@ -128,14 +123,9 @@
   <target name="clean" depends="init">
     <delete dir="${builddir}"/>
     <delete dir="${distdir}"/>
-    <delete dir="${testworkingdir}"/>
-    <!-- Only delete html files from ${docdir} - don't delete
-         directories since this is part of svn tree -->
-    <delete>    
-      <fileset dir="${docdir}">
-        <include name="**/*.html"/>
-      </fileset>
-    </delete>
+    <delete dir="${testtmpdir}"/>
+    <delete dir="positional_index"/>
+    <delete dir="predication_index"/>
   </target>
 
   <!-- Compile and run tests. -->
@@ -164,9 +154,9 @@
   <target name="run-integration-tests" depends="compile-tests,jardist">
   	<!-- This test configuration includes some quick and dirty filesystem
       	 operations to make sure that the working dir starts and finishes empty. -->
-    <delete dir="${testworkingdir}"/>
-    <mkdir dir="${testworkingdir}"/>
-    <java fork="true" dir="${testworkingdir}"
+    <delete dir="positional_index"/>
+    <delete dir="predication_index"/>
+    <java fork="true"
           classpathref="run.classpath"
           classname="pitt.search.semanticvectors.integrationtests.RunTests"/>
     <!--
@@ -183,7 +173,7 @@
      we have a good way of shipping development extensions without
      introducing dependencies on any more libraries to install. -->
   <target name="compile-ext" depends="compile">
-    <javac srcdir="${extdir}"
+    <javac srcdir="${extdir}/pitt"
            destdir="${buildclassesdir}"
            debug="on"
            classpathref="compile.classpath"
